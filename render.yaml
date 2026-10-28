@@ -1,6 +1,6 @@
 # Render Blueprint: the public demo of Relay (free plan).
-# The embedded PostgreSQL lives on the service's temporary disk, so the demo starts
-# clean every time the free instance wakes up, with the sample clinic recreated.
+# Data lives in a free PostgreSQL (Neon). DEMO_RESET_ON_START wipes it and recreates the
+# sample data each time the free instance wakes up, so visitors always see a clean demo.
 services:
   - type: web
     name: relay-whatsapp-ai-agent
@@ -16,6 +16,11 @@ services:
         generateValue: true
       - key: DEMO_MODE
         value: "true"
+      - key: DEMO_RESET_ON_START
+        value: "true"
+      # connection string of the demo database, set in the Render dashboard
+      - key: DATABASE_URL
+        sync: false
       - key: WEB_DIR
         value: /opt/render/project/src/apps/web/dist
       # optional: Claude answers instead of the free demo responder

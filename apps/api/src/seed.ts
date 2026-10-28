@@ -1,5 +1,5 @@
 import { randomBytes } from "node:crypto";
-import { count, eq } from "drizzle-orm";
+import { count, eq, sql } from "drizzle-orm";
 import type { Db } from "./db/client.js";
 import { contacts, conversations, documents, messages, users } from "./db/schema.js";
 import { hashPassword } from "./auth/password.js";
@@ -43,6 +43,11 @@ Please cancel or reschedule at least 24 hours in advance. Late cancellations and
     body: `On the first visit the dentist does a full check-up, takes a panoramic X-ray if needed and explains the treatment plan with prices before anything is done. Plan to arrive 10 minutes early to fill in the health form. The first visit takes about one hour.`,
   },
 ];
+
+// Empties every table (the schema stays). Used only by the public demo, see server.ts.
+export async function resetData(db: Db) {
+  await db.execute(sql`TRUNCATE jobs, messages, conversations, contacts, chunks, documents, users RESTART IDENTITY CASCADE`);
+}
 
 // Creates the demo account, knowledge base and two sample conversations, once.
 export async function seedDemo(db: Db, now = new Date()) {

@@ -4,7 +4,7 @@ import { createResponder } from "./ai/responder.js";
 import { simulatorChannel } from "./channels/simulator.js";
 import { createWhatsAppChannel } from "./channels/whatsapp.js";
 import { createWorker } from "./core/worker.js";
-import { DEMO_BUSINESS, seedDemo } from "./seed.js";
+import { DEMO_BUSINESS, resetData, seedDemo } from "./seed.js";
 
 // Local settings from apps/api/.env (copy .env.example). Real environment variables win.
 try {
@@ -30,6 +30,9 @@ const channel = whatsapp ? createWhatsAppChannel(whatsapp) : simulatorChannel;
 const responder = createResponder(env);
 const demo = env.DEMO_MODE === "true";
 const businessName = env.BUSINESS_NAME ?? DEMO_BUSINESS;
+// Public demo on a permanent database: start every boot from a clean sample clinic,
+// so what earlier visitors typed doesn't pile up. Never set this on real data.
+if (demo && env.DEMO_RESET_ON_START === "true") await resetData(db);
 if (demo) await seedDemo(db);
 
 const { app, bus } = await buildApp(db, {

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
-import { seedDemo } from "../src/seed.js";
+import { resetData, seedDemo } from "../src/seed.js";
 import { setup } from "./helpers.js";
 
 let ctx: Awaited<ReturnType<typeof setup>>;
@@ -34,5 +34,16 @@ describe("sign in", () => {
     ctx = await setup({ demo: true });
     expect(await seedDemo(ctx.db, ctx.clock.now())).toBe(true);
     expect(await seedDemo(ctx.db, ctx.clock.now())).toBe(false);
+  });
+
+  it("starts the public demo from scratch after a reset", async () => {
+    ctx = await setup({ demo: true });
+    await seedDemo(ctx.db, ctx.clock.now());
+    await ctx.customer("a visitor wrote this");
+    await resetData(ctx.db);
+    expect(await seedDemo(ctx.db, ctx.clock.now())).toBe(true);
+    const res = await ctx.app.inject({ method: "POST", url: "/auth/demo" });
+    const inbox = await ctx.app.inject({ method: "GET", url: "/conversations", headers: { authorization: `Bearer ${res.json().token}` } });
+    expect(inbox.json()).toHaveLength(2);
   });
 });
