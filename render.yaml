@@ -1,0 +1,23 @@
+# Render Blueprint: the public demo of Relay (free plan).
+# The embedded PostgreSQL lives on the service's temporary disk, so the demo starts
+# clean every time the free instance wakes up, with the sample clinic recreated.
+services:
+  - type: web
+    name: relay-whatsapp-ai-agent
+    runtime: node
+    plan: free
+    buildCommand: npm ci && npm run build -w apps/web
+    startCommand: cd apps/api && npx tsx src/server.ts
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: JWT_SECRET
+        generateValue: true
+      - key: DEMO_MODE
+        value: "true"
+      - key: WEB_DIR
+        value: /opt/render/project/src/apps/web/dist
+      # optional: Claude answers instead of the free demo responder
+      - key: ANTHROPIC_API_KEY
+        sync: false

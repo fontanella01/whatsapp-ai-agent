@@ -77,6 +77,10 @@ docker compose up --build    # http://localhost:3333, with a real PostgreSQL
 
 One image serves the API and the built web app.
 
+### On Render
+
+`render.yaml` deploys the public demo on the free plan as one service. The embedded PostgreSQL starts empty on every boot and the sample clinic is recreated, so visitors always see a clean demo.
+
 ## Connecting a real WhatsApp number
 
 1. Create an app in Meta for Developers with the WhatsApp product and get a phone number id and a token.
