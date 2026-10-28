@@ -1,0 +1,30 @@
+{
+  "name": "@relay/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "start": "tsx src/server.ts",
+    "seed": "tsx src/seed.ts",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.132.1",
+    "@electric-sql/pglite": "^0.5.8",
+    "@fastify/jwt": "^10.2.4",
+    "@fastify/static": "^10.1.8",
+    "drizzle-orm": "^0.45.4",
+    "fastify": "^5.12.5",
+    "pg": "^8.23.1",
+    "tsx": "^4.23.15",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.4",
+    "@types/pg": "^8.23.1",
+    "typescript": "^7.0.2",
+    "vitest": "^5.0.3"
+  }
+}
