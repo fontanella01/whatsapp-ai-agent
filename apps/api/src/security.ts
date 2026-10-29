@@ -19,13 +19,7 @@ export const redactUrl = (url: string) => url.replace(/([?&]token=)[^&]*/g, "$1[
 
 export const logger = {
   serializers: {
-    req: (req: FastifyRequest) => ({
-      method: req.method,
-      url: redactUrl(req.url),
-      remoteAddress: req.ip,
-      // TEMPORARY: find which proxy headers reach the app on Render
-      ...(req.url.includes("probe=") ? { probe: { xff: req.headers["x-forwarded-for"], cf: req.headers["cf-connecting-ip"], tci: req.headers["true-client-ip"], xri: req.headers["x-real-ip"], ips: req.ips } } : {}),
-    }),
+    req: (req: FastifyRequest) => ({ method: req.method, url: redactUrl(req.url), remoteAddress: req.ip }),
   },
 };
 
