@@ -54,6 +54,7 @@ worker ─▶ send through WhatsApp API ─▶ mark sent ─▶ live event to th
 - **Webhook authenticity.** Every Meta request is checked with HMAC-SHA256 over the raw body (`X-Hub-Signature-256`) using a constant-time comparison; tampered or unsigned requests get `401`.
 - **The model answers in a fixed shape.** Claude returns `{ reply, handoff, handoff_reason }` through structured output validated by Zod, with low effort to keep replies fast. Customer messages and documents are passed as data inside tags and the prompt says to ignore instructions found in them (prompt injection). If the model declines, the API's server-side fallback retries on another model, and a remaining refusal becomes a handoff.
 - **AI and channel behind interfaces.** The worker only knows `responder.reply()` and `channel.send()`. Production uses Claude and the WhatsApp Cloud API; the demo uses the rule-based responder and the simulator; tests use fakes and a controllable clock.
+- **Hardened for a public demo.** Rate limits per visitor (10 login attempts per 15 minutes, 20 simulator messages per minute, a general cap on everything else), counted on the real IP behind the proxy so a faked `X-Forwarded-For` does not reset them. A daily cap on AI calls (`AI_DAILY_LIMIT`, 200 on the demo) falls back to the free responder, so visitors cannot run up the API bill. Security headers with a strict CSP, generic messages for unexpected errors, and the live-updates token removed from request logs.
 - **Messages are ordered by arrival** (an identity column), not only by timestamp, so two messages saved in the same millisecond still read in the right order.
 
 ## Running locally
@@ -94,11 +95,11 @@ Without these variables the app uses the simulator only.
 ## Tests
 
 ```bash
-npm test          # 36 tests
+npm test          # 44 tests
 npm run typecheck
 ```
 
-Covered: AI replies with the right knowledge, burst debounce, every handoff path, agents taking over and handing back, reopening closed conversations, retries with backoff, permanent failures, the AI failing repeatedly, webhook verification and signatures (including tampered bodies), duplicate deliveries, retrieval quality on the demo documents, re-indexing, login and the demo account, and serving the web app. Every test starts a fresh in-memory PostgreSQL; none calls a real AI or WhatsApp.
+Covered: AI replies with the right knowledge, burst debounce, every handoff path, agents taking over and handing back, reopening closed conversations, retries with backoff, permanent failures, the AI failing repeatedly, webhook verification and signatures (including tampered bodies), duplicate deliveries, retrieval quality on the demo documents, re-indexing, login and the demo account, serving the web app, rate limits (including a faked `X-Forwarded-For`), security headers, generic error messages, token redaction in logs and the daily AI cap. Every test starts a fresh in-memory PostgreSQL; none calls a real AI or WhatsApp.
 
 ## Configuration (apps/api/.env)
 
@@ -111,11 +112,14 @@ Covered: AI replies with the right knowledge, burst debounce, every handoff path
 | `BUSINESS_NAME` | no | Name the AI uses for the business |
 | `WHATSAPP_*` | no | Real WhatsApp Cloud API (see above) |
 | `DEMO_MODE` | no | `true` creates the sample clinic and shows "Try the demo" |
+| `AI_DAILY_LIMIT` | no | Most AI calls per day; past it the demo responder answers (default 200 with `DEMO_MODE`, no cap otherwise) |
+| `TRUST_PROXY_HOPS` | no | Proxies in front of the API (1 on Render), so limits count the visitor and not the proxy |
 | `WEB_DIR` | no | Serve the built web app from this folder (set in the Docker image) |
 
 ## Limits and next steps
 
 - **Retrieval is lexical.** Full-text search matches words and their variations, not meaning: "it hurts" won't find "severe pain". Embeddings with pgvector would fix that; the retrieval function is the only place that would change.
+- Rate-limit counters and the AI cap live in memory, which fits one instance; several instances would share them through Redis.
 - Live events use an in-process bus, which fits one API instance. With several instances they would move to PostgreSQL `LISTEN/NOTIFY` or Redis.
 - Media messages (audio, images) are ignored; only text is handled.
 - One business per installation. Making it multi-tenant would follow the same pattern as my [HelpDesk](https://github.com/fontanella01/helpdesk) project.

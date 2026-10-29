@@ -5,6 +5,7 @@ import type { Db } from "../db/client.js";
 import { users } from "../db/schema.js";
 import { verifyPassword } from "../auth/password.js";
 import { DEMO_EMAIL } from "../seed.js";
+import { LIMITS } from "../security.js";
 
 const loginSchema = z.object({ email: z.string().trim().toLowerCase().max(254), password: z.string().min(1).max(200) });
 
@@ -20,7 +21,7 @@ export function authRoutes(app: FastifyInstance, db: Db, opts: { demo: boolean; 
   // What the login screen needs to know before anyone signs in.
   app.get("/auth/config", async () => ({ demo: opts.demo, ...opts.info }));
 
-  app.post("/auth/login", async (req, reply) => {
+  app.post("/auth/login", { config: { rateLimit: LIMITS.login } }, async (req, reply) => {
     const body = loginSchema.safeParse(req.body);
     if (!body.success) return reply.code(400).send({ error: "Enter your email and password" });
     const [user] = await db.select().from(users).where(eq(users.email, body.data.email));
@@ -30,7 +31,7 @@ export function authRoutes(app: FastifyInstance, db: Db, opts: { demo: boolean; 
   });
 
   // One click into the demo workspace, only when DEMO_MODE is on.
-  app.post("/auth/demo", async (_req, reply) => {
+  app.post("/auth/demo", { config: { rateLimit: LIMITS.demoLogin } }, async (_req, reply) => {
     if (!opts.demo) return reply.code(404).send({ error: "Demo is disabled" });
     const [user] = await db.select().from(users).where(eq(users.email, DEMO_EMAIL));
     if (!user) return reply.code(503).send({ error: "Demo data is not ready yet" });

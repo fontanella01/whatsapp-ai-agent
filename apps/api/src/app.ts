@@ -2,6 +2,7 @@ import Fastify from "fastify";
 import fastifyStatic from "@fastify/static";
 import type { Db } from "./db/client.js";
 import { registerAuth } from "./auth/plugin.js";
+import { logger, registerSecurity } from "./security.js";
 import { EventBus } from "./core/events.js";
 import type { Clock } from "./core/conversations.js";
 import type { Responder } from "./ai/responder.js";
@@ -28,13 +29,18 @@ export type AppOptions = {
   debounceMs?: number;
   // folder with the built web app (apps/web/dist), served in production
   webDir?: string;
+  // proxies in front of the app (Render has one), so req.ip is the visitor and not
+  // the proxy; rate limits are counted per req.ip
+  trustProxy?: number | false;
 };
 
 // The app is built from its dependencies (database, clock, AI, channel) instead of
 // creating them, so tests run it with an in-memory database, a fake clock and fakes.
 export async function buildApp(db: Db, opts: AppOptions) {
   const app = Fastify({
-    logger: opts.logger ?? false,
+    logger: opts.logger ? logger : false,
+    // trust only the given number of hops, so a visitor cannot fake their IP in X-Forwarded-For
+    trustProxy: opts.trustProxy ? (_address: string, hop: number) => hop < (opts.trustProxy as number) : false,
     bodyLimit: 1_048_576,
     // the web app calls /api/...; in development Vite strips the prefix, in
     // production (one container serving both) this does the same
@@ -43,6 +49,7 @@ export async function buildApp(db: Db, opts: AppOptions) {
   const now = opts.now ?? (() => new Date());
   const bus = opts.bus ?? new EventBus();
   const debounceMs = opts.debounceMs ?? 1500;
+  await registerSecurity(app);
   await registerAuth(app, opts.jwtSecret);
 
   app.get("/health", async () => ({ ok: true, ai: opts.responder.mode, channel: opts.channel.name }));

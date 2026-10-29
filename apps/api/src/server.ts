@@ -1,6 +1,7 @@
 import { buildApp } from "./app.js";
 import { createDb } from "./db/client.js";
-import { createResponder } from "./ai/responder.js";
+import { createResponder, demoResponder } from "./ai/responder.js";
+import { withDailyLimit } from "./ai/budget.js";
 import { simulatorChannel } from "./channels/simulator.js";
 import { createWhatsAppChannel } from "./channels/whatsapp.js";
 import { createWorker } from "./core/worker.js";
@@ -27,8 +28,12 @@ const whatsapp =
     ? { token: env.WHATSAPP_TOKEN, phoneNumberId: env.WHATSAPP_PHONE_NUMBER_ID, appSecret: env.WHATSAPP_APP_SECRET, verifyToken: env.WHATSAPP_VERIFY_TOKEN }
     : null;
 const channel = whatsapp ? createWhatsAppChannel(whatsapp) : simulatorChannel;
-const responder = createResponder(env);
 const demo = env.DEMO_MODE === "true";
+// A daily cap on AI calls (AI_DAILY_LIMIT; 200 by default on the public demo), so
+// visitors cannot run up the API bill. Past it, the free demo responder answers.
+const aiLimit = env.AI_DAILY_LIMIT ? Number(env.AI_DAILY_LIMIT) : demo ? 200 : Infinity;
+const baseResponder = createResponder(env);
+const responder = baseResponder.mode === "ai" ? withDailyLimit(baseResponder, demoResponder, aiLimit, () => new Date()) : baseResponder;
 const businessName = env.BUSINESS_NAME ?? DEMO_BUSINESS;
 // Public demo on a permanent database: start every boot from a clean sample clinic,
 // so what earlier visitors typed doesn't pile up. Never set this on real data.
@@ -43,6 +48,7 @@ const { app, bus } = await buildApp(db, {
   demo,
   businessName,
   webDir: env.WEB_DIR,
+  trustProxy: env.TRUST_PROXY_HOPS ? Number(env.TRUST_PROXY_HOPS) : false,
   whatsapp: whatsapp && { appSecret: whatsapp.appSecret, verifyToken: whatsapp.verifyToken },
 });
 

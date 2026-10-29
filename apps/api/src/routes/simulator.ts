@@ -6,6 +6,7 @@ import type { Db } from "../db/client.js";
 import { contacts, conversations, messages } from "../db/schema.js";
 import type { EventBus } from "../core/events.js";
 import { ingestInbound, type Clock } from "../core/conversations.js";
+import { LIMITS } from "../security.js";
 
 const sendSchema = z.object({
   phone: z.string().regex(/^[0-9]{8,15}$/, "Phone with country code, digits only"),
@@ -19,7 +20,7 @@ const threadQuery = z.object({ phone: z.string().regex(/^[0-9]{8,15}$/) });
 export function simulatorRoutes(app: FastifyInstance, db: Db, bus: EventBus, now: Clock, debounceMs: number) {
   app.addHook("preHandler", app.authenticate);
 
-  app.post("/simulator/messages", async (req, reply) => {
+  app.post("/simulator/messages", { config: { rateLimit: LIMITS.simulator } }, async (req, reply) => {
     const body = sendSchema.safeParse(req.body);
     if (!body.success) return reply.code(400).send({ error: z.prettifyError(body.error) });
     const result = await ingestInbound(db, bus, { ...body.data, externalId: `sim-in-${randomUUID()}` }, now(), debounceMs);
