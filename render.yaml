@@ -21,9 +21,10 @@ services:
       # connection string of the demo database, set in the Render dashboard
       - key: DATABASE_URL
         sync: false
-      # Render puts one proxy in front of the app; limits count the visitor behind it
+      # Requests reach the app through Cloudflare, the Render load balancer and the
+      # instance proxy; limits count the visitor behind those three
       - key: TRUST_PROXY_HOPS
-        value: "1"
+        value: "3"
       - key: WEB_DIR
         value: /opt/render/project/src/apps/web/dist
       # optional: Claude answers instead of the free demo responder

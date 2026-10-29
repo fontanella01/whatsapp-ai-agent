@@ -113,7 +113,7 @@ Covered: AI replies with the right knowledge, burst debounce, every handoff path
 | `WHATSAPP_*` | no | Real WhatsApp Cloud API (see above) |
 | `DEMO_MODE` | no | `true` creates the sample clinic and shows "Try the demo" |
 | `AI_DAILY_LIMIT` | no | Most AI calls per day; past it the demo responder answers (default 200 with `DEMO_MODE`, no cap otherwise) |
-| `TRUST_PROXY_HOPS` | no | Proxies in front of the API (1 on Render), so limits count the visitor and not the proxy |
+| `TRUST_PROXY_HOPS` | no | Proxies in front of the API (3 on Render: Cloudflare, load balancer, instance proxy), so limits count the visitor and not the proxy |
 | `WEB_DIR` | no | Serve the built web app from this folder (set in the Docker image) |
 
 ## Limits and next steps
