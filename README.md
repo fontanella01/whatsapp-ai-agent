@@ -2,6 +2,8 @@
 
 [![CI](https://github.com/fontanella01/whatsapp-ai-agent/actions/workflows/ci.yml/badge.svg)](https://github.com/fontanella01/whatsapp-ai-agent/actions/workflows/ci.yml)
 
+**Live demo:** https://relay-whatsapp-ai-agent.onrender.com (click **Try the demo**; the free server may take up to a minute to wake up)
+
 An AI agent that answers a business's WhatsApp messages from its own knowledge base, and hands the
 conversation to a person when it can't help: when the customer asks for one, wants to book or cancel,
 or asks something the knowledge base doesn't cover. The team follows every conversation live in an
